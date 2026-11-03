@@ -98,6 +98,17 @@ jobs:
           BOT=$(gh api user --jq .login)
           NAME=${SRC#*/}
           echo "bot=$BOT src=$SRC name=$NAME"
+          # 目标仓库本来就在小酱名下：不 fork 自己，直接用它。
+          SRC_OWNER=${SRC%%/*}
+          if [ "$(printf '%s' "$SRC_OWNER" | tr 'A-Z' 'a-z')" = "$(printf '%s' "$BOT" | tr 'A-Z' 'a-z')" ]; then
+            echo "bot_repo=$SRC" >> "$GITHUB_OUTPUT"
+            gh repo clone "$SRC" fork -- --depth 50
+            cd fork
+            git config user.name "xiaojiang"
+            git config user.email "{{EMAIL_9am2kw4p}}"
+            echo "cloned=$SRC self=1 head=$(git rev-parse --short HEAD)"
+            exit 0
+          fi
           # 已经 fork 过就直接复用；fork 是异步的，新建要多等几秒。
           FLAG=$(gh api "repos/$BOT/$NAME" --jq ".fork" 2>/dev/null || echo none)
           echo "fork_before=$FLAG"
